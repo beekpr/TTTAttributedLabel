@@ -1128,7 +1128,9 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
         __weak __typeof(self)weakSelf = self;
 #endif
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+            if (!weakSelf) { return; }
             __strong __typeof(weakSelf)strongSelf = weakSelf;
+            if (!strongSelf) { return; }
 
             NSDataDetector *dataDetector = strongSelf.dataDetector;
             if (dataDetector && [dataDetector respondsToSelector:@selector(matchesInString:options:range:)]) {
