@@ -553,14 +553,26 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
 }
 
 - (void)setEnabledTextCheckingTypes:(NSTextCheckingTypes)enabledTextCheckingTypes {
+    // one detector instance per type (combination), fast reuse e.g. in cells
+    static NSMutableDictionary *dataDetectorsByType = nil;
+
+    if (!dataDetectorsByType) {
+        dataDetectorsByType = [NSMutableDictionary dictionary];
+    }
+    
     if (self.enabledTextCheckingTypes == enabledTextCheckingTypes) {
         return;
     }
     
     _enabledTextCheckingTypes = enabledTextCheckingTypes;
-
-    if (self.enabledTextCheckingTypes) {
-        self.dataDetector = [NSDataDetector dataDetectorWithTypes:self.enabledTextCheckingTypes error:nil];
+    
+    if (enabledTextCheckingTypes) {
+        if (!dataDetectorsByType[@(enabledTextCheckingTypes)]) {
+            dataDetectorsByType[@(enabledTextCheckingTypes)] =
+                [NSDataDetector dataDetectorWithTypes:enabledTextCheckingTypes
+                                                error:nil];
+        }
+        self.dataDetector = dataDetectorsByType[@(enabledTextCheckingTypes)];
     } else {
         self.dataDetector = nil;
     }
@@ -1121,7 +1133,7 @@ static inline CGSize CTFramesetterSuggestFrameSizeForAttributedStringWithConstra
     self.activeLink = nil;
 
     self.linkModels = [NSArray array];
-    if (self.attributedText && self.enabledTextCheckingTypes) {
+    if (text && self.attributedText && self.enabledTextCheckingTypes) {
 #if __IPHONE_OS_VERSION_MIN_REQUIRED < 50000
         __unsafe_unretained __typeof(self)weakSelf = self;
 #else
